@@ -1,10 +1,11 @@
 #! /usr/bin/env ruby
+
 $LOAD_PATH.unshift File.expand_path(File.dirname(__FILE__) + '/../lib')
-require 'grack'
-require 'git_adapter'
+require 'grack/app'
+require 'grack/git_adapter'
 
 config = {
-  :project_root => "/opt",
+  :root => "/opt",
   :upload_pack => true,
   :receive_pack => false,
 }

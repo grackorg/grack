@@ -1,0 +1,225 @@
+require 'pathname'
+require 'rack/request'
+require 'rack/response'
+require 'time'
+require 'zlib'
+
+require 'grack/file_streamer'
+require 'grack/git_adapter'
+require 'grack/io_streamer'
+
+module Grack
+  class RequestHandler
+    VALID_SERVICE_TYPES = %w{git-upload-pack git-receive-pack}
+
+    ROUTES = [
+      [%r'/+(.*?)/+(git-(?:upload|receive)-pack)$',      'POST', :handle_pack],
+      [%r'/+(.*?)/+info/refs$',                          'GET',  :info_refs],
+      [%r'/+(.*?)/(HEAD)$',                              'GET',  :text_file],
+      [%r'/+(.*?)/(objects/info/alternates)$',           'GET',  :text_file],
+      [%r'/+(.*?)/(objects/info/http-alternates)$',      'GET',  :text_file],
+      [%r'/+(.*?)/(objects/info/packs)$',                'GET',  :info_packs],
+      [%r'/+(.*?)/(objects/info/[^/]*)$',                'GET',  :text_file],
+      [%r'/+(.*?)/(objects/[0-9a-f]{2}/[0-9a-f]{38})$',  'GET',  :loose_object],
+      [%r'/+(.*?)/(objects/pack/pack-[0-9a-f]{40}\.pack)$', 'GET', :pack_file],
+      [%r'/+(.*?)/(objects/pack/pack-[0-9a-f]{40}\.idx)$', 'GET', :idx_file],
+    ]
+
+    def initialize(opts = {})
+      @root               = Pathname.new(opts.fetch(:root, '.')).expand_path
+      @allow_receive_pack = opts.fetch(:allow_receive_pack, nil)
+      @allow_upload_pack  = opts.fetch(:allow_upload_pack, nil)
+      git_config          = opts.fetch(:adapter_config, {})
+      @git                = opts.fetch(:adapter, GitAdapter).new(git_config)
+    end
+
+    def call(env)
+      @env = env
+      @request = Rack::Request.new(env)
+      route
+    end
+
+    private
+
+    attr_reader :env
+    attr_reader :request
+    attr_reader :git
+    attr_reader :root
+
+    def allow_receive_pack?
+      @allow_receive_pack ||
+        (@allow_receive_pack.nil? && git.config('http.receivepack') == 'true')
+    end
+
+    def allow_upload_pack?
+      @allow_upload_pack ||
+        (@allow_upload_pack.nil? && git.config('http.uploadpack') == 'true')
+    end
+
+
+    def route
+      ROUTES.each do |path_matcher, verb, handler|
+        request.path_info.match(path_matcher) do |match|
+          repository_uri = Rack::Utils.unescape(match[1])
+
+          return bad_request if bad_uri?(repository_uri)
+          return method_not_allowed unless verb == request.request_method
+
+          git.repository_path = root + repository_uri
+          return not_found unless git.exist?
+
+          return send(handler, *match[2..-1])
+        end
+      end
+      not_found
+    end
+
+    def handle_pack(pack_type)
+      unless request.content_type == "application/x-#{pack_type}-request" &&
+             pack_type_allowed?(pack_type)
+        return no_access
+      end
+
+      headers = {'Content-Type' => "application/x-#{pack_type}-result"}
+      exchange_pack(pack_type, headers, request_io_in)
+    end
+
+    def info_refs
+      pack_type = request.params['service']
+
+      if pack_type_allowed?(pack_type)
+        headers = hdr_nocache
+        headers['Content-Type'] = "application/x-#{pack_type}-advertisement"
+        exchange_pack(pack_type, headers, nil, {:advertise_refs => true})
+      elsif pack_type.nil?
+        git.update_server_info
+        send_file(
+          git.file('info/refs'), 'text/plain; charset=utf-8', hdr_nocache
+        )
+      else
+        not_found
+      end
+    end
+
+    def info_packs(path)
+      send_file(git.file(path), 'text/plain; charset=utf-8', hdr_nocache)
+    end
+
+    def loose_object(path)
+      send_file(
+        git.file(path), 'application/x-git-loose-object', hdr_cache_forever
+      )
+    end
+
+    def pack_file(path)
+      send_file(
+        git.file(path), 'application/x-git-packed-objects', hdr_cache_forever
+      )
+    end
+
+    def idx_file(path)
+      send_file(
+        git.file(path),
+        'application/x-git-packed-objects-toc',
+        hdr_cache_forever
+      )
+    end
+
+    def text_file(path)
+      send_file(git.file(path), 'text/plain', hdr_nocache)
+    end
+
+    def send_file(path_or_io, content_type, headers = {})
+      return not_found if path_or_io.nil?
+
+      headers['Content-Type'] = content_type
+      case path_or_io
+      when Pathname
+        return not_found unless path_or_io.exist?
+
+        headers['Last-Modified'] = path_or_io.mtime.httpdate
+        body = FileStreamer.new(path_or_io)
+      else
+        headers['Last-Modified'] = Time.now.httpdate
+        body = IOStreamer.new(path_or_io)
+      end
+
+      [200, headers, body]
+    end
+
+    def request_io_in
+      return request.body unless env['HTTP_CONTENT_ENCODING'] =~ /gzip/
+      Zlib::GzipReader.new(request.body)
+    end
+
+    def pack_type_valid?(pack_type)
+      VALID_SERVICE_TYPES.include?(pack_type) 
+    end
+
+    def pack_type_allowed?(pack_type)
+      return false unless pack_type_valid?(pack_type)
+      return true if pack_type == 'git-receive-pack' && allow_receive_pack?
+      return true if pack_type == 'git-upload-pack' && allow_upload_pack?
+      false
+    end
+
+    def exchange_pack(pack_type, headers, io_in, opts = {})
+      Rack::Response.new([], 200, headers).finish do |response|
+        git.handle_pack(pack_type, io_in, response, opts)
+      end
+    end
+
+    def bad_uri?(path)
+      invalid_segments = %w{. ..}
+      path.split('/').any? { |segment| invalid_segments.include?(segment) }
+    end
+
+    # --------------------------------------
+    # HTTP error response handling functions
+    # --------------------------------------
+
+    PLAIN_TYPE = {'Content-Type' => 'text/plain'}
+
+    def method_not_allowed
+      if @env['SERVER_PROTOCOL'] == 'HTTP/1.1'
+        [405, PLAIN_TYPE, ['Method Not Allowed']]
+      else
+        bad_request
+      end
+    end
+
+    def bad_request
+      [400, PLAIN_TYPE, ['Bad Request']]
+    end
+
+    def not_found
+      [404, PLAIN_TYPE, ['Not Found']]
+    end
+
+    def no_access
+      [403, PLAIN_TYPE, ['Forbidden']]
+    end
+
+
+    # ------------------------
+    # header writing functions
+    # ------------------------
+
+    def hdr_nocache
+      {
+        'Expires'       => 'Fri, 01 Jan 1980 00:00:00 GMT',
+        'Pragma'        => 'no-cache',
+        'Cache-Control' => 'no-cache, max-age=0, must-revalidate'
+      }
+    end
+
+    def hdr_cache_forever
+      now = Time.now().to_i
+      {
+        'Date'          => now.to_s,
+        'Expires'       => (now + 31536000).to_s,
+        'Cache-Control' => 'public, max-age=31536000'
+      }
+    end
+  end
+end

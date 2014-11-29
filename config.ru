@@ -2,15 +2,15 @@ $LOAD_PATH.unshift File.expand_path(File.dirname(__FILE__) + '/lib')
 
 use Rack::ShowExceptions
 
-require 'grack'
-require 'git_adapter'
+require 'grack/app'
+require 'grack/git_adapter'
 
 config = {
-  :project_root => "./",
+  :root => './',
   :adapter => Grack::GitAdapter,
-  :git_path => '/usr/bin/git',
-  :upload_pack => true,
-  :receive_pack => true,
+  :adapter_config => {:bin_path => '/usr/bin/git'},
+  :allow_upload_pack => true,
+  :allow_receive_pack => true,
 }
 
 run Grack::App.new(config)
