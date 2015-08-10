@@ -1,12 +1,20 @@
+require 'pathname'
+
+require 'grack/file_streamer'
+
 module Grack
   class GitAdapter
     READ_SIZE = 32768
 
-    attr_accessor :repository_path
+    attr_reader :repository_path
 
     def initialize(opts = {})
       @repository_path = nil
       @git_path = opts.fetch(:bin_path, 'git')
+    end
+
+    def repository_path=(path)
+      @repository_path = Pathname.new(path)
     end
 
     def exist?
@@ -27,21 +35,31 @@ module Grack
     end
 
     def file(path)
-      @repository_path + path
+      full_path = @repository_path + path
+      return nil unless full_path.exist?
+      FileStreamer.new(full_path)
     end
 
     def update_server_info
       command('update-server-info', [], nil, nil, repository_path)
     end
 
-    def config(key)
-      backticks('config', ['--local', key], repository_path.to_s).chomp
+    def allow_receive_pack?
+      config('http.receivepack') == 'true'
+    end
+
+    def allow_upload_pack?
+      config('http.uploadpack') == 'true'
     end
 
 
     private
 
     attr_reader :git_path
+
+    def config(key)
+      backticks('config', ['--local', key], repository_path.to_s).chomp
+    end
 
     def command(cmd, args, io_in, io_out, dir = nil)
       cmd = [git_path, cmd] + args
@@ -62,7 +80,7 @@ module Grack
     def backticks(cmd, args, dir = nil)
       capture_io = StringIO.new
       command(cmd, args, nil, capture_io, dir)
-      capture_io.string.chomp
+      capture_io.string
     end
   end
 end

@@ -13,16 +13,16 @@ module Grack
     VALID_SERVICE_TYPES = %w{git-upload-pack git-receive-pack}
 
     ROUTES = [
-      [%r'/+(.*?)/+(git-(?:upload|receive)-pack)$',      'POST', :handle_pack],
-      [%r'/+(.*?)/+info/refs$',                          'GET',  :info_refs],
-      [%r'/+(.*?)/(HEAD)$',                              'GET',  :text_file],
-      [%r'/+(.*?)/(objects/info/alternates)$',           'GET',  :text_file],
-      [%r'/+(.*?)/(objects/info/http-alternates)$',      'GET',  :text_file],
-      [%r'/+(.*?)/(objects/info/packs)$',                'GET',  :info_packs],
-      [%r'/+(.*?)/(objects/info/[^/]*)$',                'GET',  :text_file],
-      [%r'/+(.*?)/(objects/[0-9a-f]{2}/[0-9a-f]{38})$',  'GET',  :loose_object],
-      [%r'/+(.*?)/(objects/pack/pack-[0-9a-f]{40}\.pack)$', 'GET', :pack_file],
-      [%r'/+(.*?)/(objects/pack/pack-[0-9a-f]{40}\.idx)$', 'GET', :idx_file],
+      [%r'/(.*?)/(git-(?:upload|receive)-pack)$',        'POST', :handle_pack],
+      [%r'/(.*?)/info/refs$',                            'GET',  :info_refs],
+      [%r'/(.*?)/(HEAD)$',                               'GET',  :text_file],
+      [%r'/(.*?)/(objects/info/alternates)$',            'GET',  :text_file],
+      [%r'/(.*?)/(objects/info/http-alternates)$',       'GET',  :text_file],
+      [%r'/(.*?)/(objects/info/packs)$',                 'GET',  :info_packs],
+      [%r'/(.*?)/(objects/info/[^/]+)$',                 'GET',  :text_file],
+      [%r'/(.*?)/(objects/[0-9a-f]{2}/[0-9a-f]{38})$',   'GET',  :loose_object],
+      [%r'/(.*?)/(objects/pack/pack-[0-9a-f]{40}\.pack)$', 'GET', :pack_file],
+      [%r'/(.*?)/(objects/pack/pack-[0-9a-f]{40}\.idx)$', 'GET', :idx_file],
     ]
 
     def initialize(opts = {})
@@ -48,19 +48,23 @@ module Grack
 
     def allow_receive_pack?
       @allow_receive_pack ||
-        (@allow_receive_pack.nil? && git.config('http.receivepack') == 'true')
+        (@allow_receive_pack.nil? && git.allow_receive_pack?)
     end
 
     def allow_upload_pack?
       @allow_upload_pack ||
-        (@allow_upload_pack.nil? && git.config('http.uploadpack') == 'true')
+        (@allow_upload_pack.nil? && git.allow_upload_pack?)
     end
 
-
     def route
+      # Sanitize the URI:
+      # * Unescape escaped characters
+      # * Replace runs of / with a single /
+      path_info = Rack::Utils.unescape(request.path_info).gsub(%r{/+}, '/')
+
       ROUTES.each do |path_matcher, verb, handler|
-        request.path_info.match(path_matcher) do |match|
-          repository_uri = Rack::Utils.unescape(match[1])
+        path_info.match(path_matcher) do |match|
+          repository_uri = match[1]
 
           return bad_request if bad_uri?(repository_uri)
           return method_not_allowed unless verb == request.request_method
@@ -129,22 +133,13 @@ module Grack
       send_file(git.file(path), 'text/plain', hdr_nocache)
     end
 
-    def send_file(path_or_io, content_type, headers = {})
-      return not_found if path_or_io.nil?
+    def send_file(streamer, content_type, headers = {})
+      return not_found if streamer.nil?
 
       headers['Content-Type'] = content_type
-      case path_or_io
-      when Pathname
-        return not_found unless path_or_io.exist?
+      headers['Last-Modified'] = streamer.mtime.httpdate
 
-        headers['Last-Modified'] = path_or_io.mtime.httpdate
-        body = FileStreamer.new(path_or_io)
-      else
-        headers['Last-Modified'] = Time.now.httpdate
-        body = IOStreamer.new(path_or_io)
-      end
-
-      [200, headers, body]
+      [200, headers, streamer]
     end
 
     def request_io_in
@@ -153,7 +148,7 @@ module Grack
     end
 
     def pack_type_valid?(pack_type)
-      VALID_SERVICE_TYPES.include?(pack_type) 
+      VALID_SERVICE_TYPES.include?(pack_type)
     end
 
     def pack_type_allowed?(pack_type)

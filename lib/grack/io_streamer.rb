@@ -1,7 +1,12 @@
 module Grack
   class IOStreamer
-    def initialize(io)
+    def initialize(io, mtime)
       @io = io
+      @mtime = mtime
+    end
+
+    def mtime
+      @mtime
     end
 
     def each
