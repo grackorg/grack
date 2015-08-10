@@ -1,2 +1,5 @@
+.bundle/
+vendor/
+tests/example/example_repo.git/
 coverage/
 .*.sw?
