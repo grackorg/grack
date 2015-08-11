@@ -16,8 +16,8 @@ and receive-pack processes with the '--stateless-rpc' option, this does not actu
     lib/grack/app.rb
     lib/grack/file_streamer.rb
     lib/grack/git_adapter.rb
+    lib/grack/git_adapter_factory.rb
     lib/grack/io_streamer.rb
-    lib/grack/request_handler.rb
   }
   s.homepage = "http://github.com/schacon/grack"
   s.license = 'MIT'
