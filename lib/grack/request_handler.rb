@@ -5,7 +5,7 @@ require 'time'
 require 'zlib'
 
 require 'grack/file_streamer'
-require 'grack/git_adapter'
+require 'grack/git_adapter_factory'
 require 'grack/io_streamer'
 
 module Grack
@@ -29,8 +29,9 @@ module Grack
       @root               = Pathname.new(opts.fetch(:root, '.')).expand_path
       @allow_receive_pack = opts.fetch(:allow_receive_pack, nil)
       @allow_upload_pack  = opts.fetch(:allow_upload_pack, nil)
-      git_config          = opts.fetch(:adapter_config, {})
-      @git                = opts.fetch(:adapter, GitAdapter).new(git_config)
+      @git                = opts.fetch(
+                              :adapter_factory, GitAdapterFactory.new
+                            ).create
     end
 
     def call(env)

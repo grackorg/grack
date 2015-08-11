@@ -26,12 +26,12 @@ class GitAdapterTest < Minitest::Test
 
   def setup
     init_example_repository
-    @test_git = GitAdapter.new(:bin_path => git_path)
+    @test_git = GitAdapter.new(git_path)
     @test_git.repository_path = example_repo
   end
 
   def test_break_with_bad_git_path
-    test_git = GitAdapter.new(:bin_path => 'a/highly/unlikely/path/to/git')
+    test_git = GitAdapter.new('a/highly/unlikely/path/to/git')
     test_git.repository_path = example_repo
     assert_raises(Errno::ENOENT) do
       test_git.handle_pack('receive-pack', StringIO.new, StringIO.new)

@@ -8,9 +8,9 @@ module Grack
 
     attr_reader :repository_path
 
-    def initialize(opts = {})
+    def initialize(bin_path = 'git')
       @repository_path = nil
-      @git_path = opts.fetch(:bin_path, 'git')
+      @git_path = bin_path
     end
 
     def repository_path=(path)

@@ -5,7 +5,6 @@ require 'minitest/autorun'
 require 'minitest/unit'
 require 'mocha/setup'
 require 'pathname'
-require 'rack'
 require 'rack/test'
 require 'tempfile'
 require 'zlib'
@@ -13,7 +12,7 @@ require 'zlib'
 require 'grack/app'
 require 'grack/git_adapter'
 
-class GitHttpTest < Minitest::Test
+class RequestHandlerTest < Minitest::Test
   include Rack::Test::Methods
   include Grack
 
@@ -30,8 +29,7 @@ class GitHttpTest < Minitest::Test
       :root => example,
       :allow_upload_pack => true,
       :allow_receive_pack => true,
-      :adapter => GitAdapter,
-      :adapter_config => {:bin_path => 'git'}
+      :adapter_factory => GitAdapterFactory.new(git_path)
     }
   end
 
@@ -193,52 +191,36 @@ class GitHttpTest < Minitest::Test
   end
 
   def test_git_adapter_forbid_receive_pack
-    forbid_receive = Class.new(GitAdapter) do
-      def allow_receive_pack?
-        false
-      end
-    end
+    GitAdapter.any_instance.stubs(:allow_receive_pack?).returns(false)
 
-    app = App.new({:root => example, :adapter => forbid_receive})
+    app = App.new({:root => example, :adapter_factory => GitAdapterFactory.new})
     session = Rack::Test::Session.new(app)
     session.get "#{example_repo_urn}/info/refs?service=git-receive-pack"
     assert_equal 404, session.last_response.status
   end
 
   def test_git_adapter_allow_receive_pack
-    allow_receive = Class.new(GitAdapter) do
-      def allow_receive_pack?
-        true
-      end
-    end
+    GitAdapter.any_instance.stubs(:allow_receive_pack?).returns(true)
 
-    app = App.new({:root => example, :adapter => allow_receive})
+    app = App.new({:root => example, :adapter_factory => GitAdapterFactory.new})
     session = Rack::Test::Session.new(app)
     session.get "#{example_repo_urn}/info/refs?service=git-receive-pack"
     assert_equal 200, session.last_response.status
   end
 
   def test_git_adapter_forbid_upload_pack
-    forbid_upload = Class.new(GitAdapter) do
-      def allow_upload_pack?
-        false
-      end
-    end
+    GitAdapter.any_instance.stubs(:allow_upload_pack?).returns(false)
 
-    app = App.new({:root => example, :adapter => forbid_upload})
+    app = App.new({:root => example, :adapter_factory => GitAdapterFactory.new})
     session = Rack::Test::Session.new(app)
     session.get "#{example_repo_urn}/info/refs?service=git-upload-pack"
     assert_equal 404, session.last_response.status
   end
 
   def test_git_adapter_allow_upload_pack
-    allow_upload = Class.new(GitAdapter) do
-      def allow_upload_pack?
-        true
-      end
-    end
+    GitAdapter.any_instance.stubs(:allow_upload_pack?).returns(true)
 
-    app = App.new({:root => example, :adapter => allow_upload})
+    app = App.new({:root => example, :adapter_factory => GitAdapterFactory.new})
     session = Rack::Test::Session.new(app)
     session.get "#{example_repo_urn}/info/refs?service=git-upload-pack"
     assert_equal 200, session.last_response.status
