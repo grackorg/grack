@@ -36,6 +36,8 @@ module Grack
       dup._call(env)
     end
 
+    protected
+
     def _call(env)
       @git = @git_adapter_factory.create
       @env = env
