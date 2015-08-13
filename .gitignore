@@ -1,5 +1,9 @@
-.bundle/
-vendor/
-tests/example/example_repo.git/
-coverage/
 .*.sw?
+Gemfile.lock
+/.bundle/
+/.yardoc/
+/doc/
+/pkg/
+/vendor/bundle/
+/tests/example/example_repo.git/
+/coverage/
