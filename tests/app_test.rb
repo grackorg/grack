@@ -16,17 +16,13 @@ class RequestHandlerTest < Minitest::Test
   include Rack::Test::Methods
   include Grack
 
-  def example
-    Pathname.new('../example').expand_path(__FILE__)
-  end
-
   def example_repo_urn
     '/example_repo.git'
   end
 
   def app_config
     {
-      :root => example,
+      :root => repositories_root,
       :allow_pull => true,
       :allow_push => true,
       :adapter_factory => GitAdapterFactory.new(git_path)
@@ -39,6 +35,10 @@ class RequestHandlerTest < Minitest::Test
 
   def setup
     init_example_repository
+  end
+
+  def teardown
+    remove_example_repository
   end
 
   def test_upload_pack_advertisement
@@ -193,7 +193,9 @@ class RequestHandlerTest < Minitest::Test
   def test_git_adapter_forbid_push
     GitAdapter.any_instance.stubs(:allow_push?).returns(false)
 
-    app = App.new({:root => example, :adapter_factory => GitAdapterFactory.new})
+    app = App.new({
+      :root => repositories_root, :adapter_factory => GitAdapterFactory.new
+    })
     session = Rack::Test::Session.new(app)
     session.get "#{example_repo_urn}/info/refs?service=git-receive-pack"
     assert_equal 404, session.last_response.status
@@ -202,7 +204,9 @@ class RequestHandlerTest < Minitest::Test
   def test_git_adapter_allow_push
     GitAdapter.any_instance.stubs(:allow_push?).returns(true)
 
-    app = App.new({:root => example, :adapter_factory => GitAdapterFactory.new})
+    app = App.new({
+      :root => repositories_root, :adapter_factory => GitAdapterFactory.new
+    })
     session = Rack::Test::Session.new(app)
     session.get "#{example_repo_urn}/info/refs?service=git-receive-pack"
     assert_equal 200, session.last_response.status
@@ -211,7 +215,9 @@ class RequestHandlerTest < Minitest::Test
   def test_git_adapter_forbid_pull
     GitAdapter.any_instance.stubs(:allow_push?).returns(false)
 
-    app = App.new({:root => example, :adapter_factory => GitAdapterFactory.new})
+    app = App.new({
+      :root => repositories_root, :adapter_factory => GitAdapterFactory.new
+    })
     session = Rack::Test::Session.new(app)
     session.get "#{example_repo_urn}/info/refs?service=git-upload-pack"
     assert_equal 404, session.last_response.status
@@ -220,7 +226,9 @@ class RequestHandlerTest < Minitest::Test
   def test_git_adapter_allow_pull
     GitAdapter.any_instance.stubs(:allow_pull?).returns(true)
 
-    app = App.new({:root => example, :adapter_factory => GitAdapterFactory.new})
+    app = App.new({
+      :root => repositories_root, :adapter_factory => GitAdapterFactory.new
+    })
     session = Rack::Test::Session.new(app)
     session.get "#{example_repo_urn}/info/refs?service=git-upload-pack"
     assert_equal 200, session.last_response.status
@@ -247,7 +255,7 @@ class RequestHandlerTest < Minitest::Test
   end
 
   def test_not_found_in_empty_repo
-    empty_dir = example + 'empty-dir'
+    empty_dir = repositories_root + 'empty-dir'
     empty_dir.mkdir
 
     example_repo_urn = '/empty-dir'

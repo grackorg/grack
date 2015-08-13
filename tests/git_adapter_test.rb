@@ -30,6 +30,10 @@ class GitAdapterTest < Minitest::Test
     @test_git.repository_path = example_repo
   end
 
+  def teardown
+    remove_example_repository
+  end
+
   def test_break_with_bad_git_path
     test_git = GitAdapter.new('a/highly/unlikely/path/to/git')
     test_git.repository_path = example_repo
