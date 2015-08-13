@@ -77,8 +77,8 @@ MyAdapter.exist?
 MyAdapter.handle_pack(kind, io_in, io_out, opts = {})
 MyAdapter.file(path)
 MyAdapter.update_server_info
-MyAdapter.allow_receive_pack?
-MyAdapter.allow_upload_pack?
+MyAdapter.allow_push?
+MyAdapter.allow_pull?
 ```
 
 See `Grack::GitAdapter` for more detailed documentation and an example
@@ -105,8 +105,8 @@ require 'grack/git_adapter_factory'
 
 config = {
   :root => '/path/to/bare/repositories',
-  :allow_upload_pack => true,
-  :allow_receive_pack => true,
+  :allow_push => true,
+  :allow_pull => true,
   :adapter_factory => Grack::GitAdapterFactory.new
 }
 

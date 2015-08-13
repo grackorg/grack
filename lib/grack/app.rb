@@ -38,18 +38,18 @@ module Grack
     # @param [Hash] opts a hash of supported options.
     # @option opts [String] :root (Dir.pwd) a directory path containing 1 or
     #   more Git repositories.
-    # @option opts [Boolean, nil] :allow_receive_pack (nil) determines whether
-    #   or not to allow pushes into the repositories.  +nil+ means to defer to
-    #   the requested repository.
-    # @option opts [Boolean, nil] :allow_upload_pack (nil) determines whether
-    #   or not to allow fetches/pulls from the repositories.  +nil+ means to
-    #   defer to the requested repository.
+    # @option opts [Boolean, nil] :allow_push (nil) determines whether or not to
+    #   allow pushes into the repositories.  +nil+ means to defer to the
+    #   requested repository.
+    # @option opts [Boolean, nil] :allow_pull (nil) determines whether or not to
+    #   allow fetches/pulls from the repositories.  +nil+ means to defer to the
+    #   requested repository.
     # @option opts [#create] :git_adapter_factory (GitAdapterFactory.new) a
     #   factory object that creates Git adapter instances per request.
     def initialize(opts = {})
       @root                = Pathname.new(opts.fetch(:root, '.')).expand_path
-      @allow_receive_pack  = opts.fetch(:allow_receive_pack, nil)
-      @allow_upload_pack   = opts.fetch(:allow_upload_pack, nil)
+      @allow_push          = opts.fetch(:allow_push, nil)
+      @allow_pull          = opts.fetch(:allow_pull, nil)
       @git_adapter_factory = opts.fetch(:adapter_factory, GitAdapterFactory.new)
     end
 
@@ -103,9 +103,8 @@ module Grack
     # allowed.
     #
     # @return [Boolean] +true+ if pushes are allowed, +false+ otherwise.
-    def allow_receive_pack?
-      @allow_receive_pack ||
-        (@allow_receive_pack.nil? && git.allow_receive_pack?)
+    def allow_push?
+      @allow_push || (@allow_push.nil? && git.allow_push?)
     end
 
     ##
@@ -113,9 +112,8 @@ module Grack
     # allowed.
     #
     # @return [Boolean] +true+ if fetches are allowed, +false+ otherwise.
-    def allow_upload_pack?
-      @allow_upload_pack ||
-        (@allow_upload_pack.nil? && git.allow_upload_pack?)
+    def allow_pull?
+      @allow_pull || (@allow_pull.nil? && git.allow_pull?)
     end
 
     ##
@@ -331,8 +329,8 @@ module Grack
     #   repository; otherwise, +false+.
     def pack_type_allowed?(pack_type)
       return false unless pack_type_valid?(pack_type)
-      return true if pack_type == 'git-receive-pack' && allow_receive_pack?
-      return true if pack_type == 'git-upload-pack' && allow_upload_pack?
+      return true if pack_type == 'git-receive-pack' && allow_push?
+      return true if pack_type == 'git-upload-pack' && allow_pull?
       false
     end
 

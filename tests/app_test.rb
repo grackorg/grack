@@ -27,8 +27,8 @@ class RequestHandlerTest < Minitest::Test
   def app_config
     {
       :root => example,
-      :allow_upload_pack => true,
-      :allow_receive_pack => true,
+      :allow_pull => true,
+      :allow_push => true,
       :adapter_factory => GitAdapterFactory.new(git_path)
     }
   end
@@ -169,17 +169,17 @@ class RequestHandlerTest < Minitest::Test
     assert_equal 23, r.body.size
   end
 
-  def test_config_upload_pack_off
+  def test_config_allow_pull_off
     session = Rack::Test::Session.new(
-      App.new(app_config.merge(:allow_upload_pack => false))
+      App.new(app_config.merge(:allow_pull => false))
     )
     session.get "#{example_repo_urn}/info/refs?service=git-upload-pack"
     assert_equal 404, session.last_response.status
   end
 
-  def test_config_receive_pack_off
+  def test_config_allow_push_off
     session = Rack::Test::Session.new(
-      App.new(app_config.merge(:allow_receive_pack => false))
+      App.new(app_config.merge(:allow_push => false))
     )
     session.get "#{example_repo_urn}/info/refs?service=git-receive-pack"
     assert_equal 404, session.last_response.status
@@ -190,8 +190,8 @@ class RequestHandlerTest < Minitest::Test
     assert_equal 404, r.status
   end
 
-  def test_git_adapter_forbid_receive_pack
-    GitAdapter.any_instance.stubs(:allow_receive_pack?).returns(false)
+  def test_git_adapter_forbid_push
+    GitAdapter.any_instance.stubs(:allow_push?).returns(false)
 
     app = App.new({:root => example, :adapter_factory => GitAdapterFactory.new})
     session = Rack::Test::Session.new(app)
@@ -199,8 +199,8 @@ class RequestHandlerTest < Minitest::Test
     assert_equal 404, session.last_response.status
   end
 
-  def test_git_adapter_allow_receive_pack
-    GitAdapter.any_instance.stubs(:allow_receive_pack?).returns(true)
+  def test_git_adapter_allow_push
+    GitAdapter.any_instance.stubs(:allow_push?).returns(true)
 
     app = App.new({:root => example, :adapter_factory => GitAdapterFactory.new})
     session = Rack::Test::Session.new(app)
@@ -208,8 +208,8 @@ class RequestHandlerTest < Minitest::Test
     assert_equal 200, session.last_response.status
   end
 
-  def test_git_adapter_forbid_upload_pack
-    GitAdapter.any_instance.stubs(:allow_upload_pack?).returns(false)
+  def test_git_adapter_forbid_pull
+    GitAdapter.any_instance.stubs(:allow_push?).returns(false)
 
     app = App.new({:root => example, :adapter_factory => GitAdapterFactory.new})
     session = Rack::Test::Session.new(app)
@@ -217,8 +217,8 @@ class RequestHandlerTest < Minitest::Test
     assert_equal 404, session.last_response.status
   end
 
-  def test_git_adapter_allow_upload_pack
-    GitAdapter.any_instance.stubs(:allow_upload_pack?).returns(true)
+  def test_git_adapter_allow_pull
+    GitAdapter.any_instance.stubs(:allow_pull?).returns(true)
 
     app = App.new({:root => example, :adapter_factory => GitAdapterFactory.new})
     session = Rack::Test::Session.new(app)

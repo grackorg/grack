@@ -85,13 +85,13 @@ module Grack
 
     ##
     # @return [Boolean] +true+ if pushes should be allowed; otherwise; +false+.
-    def allow_receive_pack?
+    def allow_push?
       config('http.receivepack') == 'true'
     end
 
     ##
     # @return [Boolean] +true+ if pulls should be allowed; otherwise; +false+.
-    def allow_upload_pack?
+    def allow_pull?
       config('http.uploadpack') == 'true'
     end
 

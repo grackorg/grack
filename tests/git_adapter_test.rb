@@ -81,20 +81,20 @@ class GitAdapterTest < Minitest::Test
     assert_equal File.mtime(file_path), git_file.mtime
   end
 
-  def test_allow_receive_pack
-    assert ! @test_git.allow_receive_pack?, 'Expected allow_receive_pack? to return false'
+  def test_allow_push
+    assert ! @test_git.allow_push?, 'Expected allow_push? to return false'
     git_config_set('http.receivepack', 'false')
-    assert ! @test_git.allow_receive_pack?, 'Expected allow_receive_pack? to return false'
+    assert ! @test_git.allow_push?, 'Expected allow_push? to return false'
     git_config_set('http.receivepack', 'true')
-    assert @test_git.allow_receive_pack?, 'Expected allow_receive_pack? to return true'
+    assert @test_git.allow_push?, 'Expected allow_push? to return true'
   end
 
-  def test_allow_upload_pack
-    assert ! @test_git.allow_upload_pack?, 'Expected allow_upload_pack? to return false'
+  def test_allow_pull
+    assert ! @test_git.allow_pull?, 'Expected allow_pull? to return false'
     git_config_set('http.uploadpack', 'false')
-    assert ! @test_git.allow_upload_pack?, 'Expected allow_upload_pack? to return false'
+    assert ! @test_git.allow_pull?, 'Expected allow_pull? to return false'
     git_config_set('http.uploadpack', 'true')
-    assert @test_git.allow_upload_pack?, 'Expected allow_upload_pack? to return true'
+    assert @test_git.allow_pull?, 'Expected allow_pull? to return true'
   end
 
 end
