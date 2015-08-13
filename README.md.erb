@@ -116,7 +116,7 @@ run Grack::App.new(config)
 Then run:
 
 ```sh
-$ bundle exec rackup --host 127.0.0.1 --port 8080 config.ru
+$ bundle exec rackup --host localhost --port 8080 config.ru
 $ git clone http://localhost:8080/your-repository.git
 ```
 
@@ -132,7 +132,7 @@ $ git clone http://localhost:8080/your-repository.git
 
 * All runtime requirements
 <% spec.development_dependencies.each do |dependency| -%>
-* <%= dependency %>
+* <%= dependency.name %> (<%= dependency.requirement %>)
 <% end -%>
 
 ## Contributing

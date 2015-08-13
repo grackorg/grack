@@ -117,7 +117,7 @@ run Grack::App.new(config)
 Then run:
 
 ```sh
-$ bundle exec rackup --host 127.0.0.1 --port 8080 config.ru
+$ bundle exec rackup --host localhost --port 8080 config.ru
 $ git clone http://localhost:8080/your-repository.git
 ```
 
@@ -130,15 +130,15 @@ $ git clone http://localhost:8080/your-repository.git
 ## Development Requirements
 
 * All runtime requirements
-* rake (>= 10.1.1, ~> 10.1, development)
-* rack-test (>= 0.6.3, ~> 0.6, development)
-* minitest (>= 5.8.0, ~> 5.8, development)
-* mocha (>= 1.1.0, ~> 1.1, development)
-* simplecov (>= 0.10.0, ~> 0.10, development)
-* yard (>= 0.8.7.3, ~> 0.8.7, development)
-* redcarpet (>= 3.1.0, ~> 3.1, development)
-* github-markup (>= 1.0.2, ~> 1.0, development)
-* pry (~> 0, development)
+* rake (>= 10.1.1, ~> 10.1)
+* rack-test (>= 0.6.3, ~> 0.6)
+* minitest (>= 5.8.0, ~> 5.8)
+* mocha (>= 1.1.0, ~> 1.1)
+* simplecov (>= 0.10.0, ~> 0.10)
+* yard (>= 0.8.7.3, ~> 0.8.7)
+* redcarpet (>= 3.1.0, ~> 3.1)
+* github-markup (>= 1.0.2, ~> 1.0)
+* pry (~> 0)
 
 ## Contributing
 
