@@ -92,7 +92,7 @@ module Grack
     ##
     # @return [Boolean] +true+ if pulls should be allowed; otherwise; +false+.
     def allow_pull?
-      config('http.uploadpack') == 'true'
+      config('http.uploadpack') != 'false'
     end
 
 

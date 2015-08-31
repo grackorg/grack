@@ -94,7 +94,7 @@ class GitAdapterTest < Minitest::Test
   end
 
   def test_allow_pull
-    assert ! @test_git.allow_pull?, 'Expected allow_pull? to return false'
+    assert @test_git.allow_pull?, 'Expected allow_pull? to return true'
     git_config_set('http.uploadpack', 'false')
     assert ! @test_git.allow_pull?, 'Expected allow_pull? to return false'
     git_config_set('http.uploadpack', 'true')
