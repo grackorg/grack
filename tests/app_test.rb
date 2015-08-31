@@ -213,7 +213,7 @@ class RequestHandlerTest < Minitest::Test
   end
 
   def test_git_adapter_forbid_pull
-    GitAdapter.any_instance.stubs(:allow_push?).returns(false)
+    GitAdapter.any_instance.stubs(:allow_pull?).returns(false)
 
     app = App.new({
       :root => repositories_root, :git_adapter_factory => GitAdapterFactory.new
