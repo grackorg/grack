@@ -50,7 +50,8 @@ module Grack
       @root                = Pathname.new(opts.fetch(:root, '.')).expand_path
       @allow_push          = opts.fetch(:allow_push, nil)
       @allow_pull          = opts.fetch(:allow_pull, nil)
-      @git_adapter_factory = opts.fetch(:adapter_factory, GitAdapterFactory.new)
+      @git_adapter_factory =
+        opts.fetch(:git_adapter_factory, GitAdapterFactory.new)
     end
 
     ##

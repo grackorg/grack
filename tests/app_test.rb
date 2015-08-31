@@ -25,7 +25,7 @@ class RequestHandlerTest < Minitest::Test
       :root => repositories_root,
       :allow_pull => true,
       :allow_push => true,
-      :adapter_factory => GitAdapterFactory.new(git_path)
+      :git_adapter_factory => GitAdapterFactory.new(git_path)
     }
   end
 
@@ -194,7 +194,7 @@ class RequestHandlerTest < Minitest::Test
     GitAdapter.any_instance.stubs(:allow_push?).returns(false)
 
     app = App.new({
-      :root => repositories_root, :adapter_factory => GitAdapterFactory.new
+      :root => repositories_root, :git_adapter_factory => GitAdapterFactory.new
     })
     session = Rack::Test::Session.new(app)
     session.get "#{example_repo_urn}/info/refs?service=git-receive-pack"
@@ -205,7 +205,7 @@ class RequestHandlerTest < Minitest::Test
     GitAdapter.any_instance.stubs(:allow_push?).returns(true)
 
     app = App.new({
-      :root => repositories_root, :adapter_factory => GitAdapterFactory.new
+      :root => repositories_root, :git_adapter_factory => GitAdapterFactory.new
     })
     session = Rack::Test::Session.new(app)
     session.get "#{example_repo_urn}/info/refs?service=git-receive-pack"
@@ -216,7 +216,7 @@ class RequestHandlerTest < Minitest::Test
     GitAdapter.any_instance.stubs(:allow_push?).returns(false)
 
     app = App.new({
-      :root => repositories_root, :adapter_factory => GitAdapterFactory.new
+      :root => repositories_root, :git_adapter_factory => GitAdapterFactory.new
     })
     session = Rack::Test::Session.new(app)
     session.get "#{example_repo_urn}/info/refs?service=git-upload-pack"
@@ -227,7 +227,7 @@ class RequestHandlerTest < Minitest::Test
     GitAdapter.any_instance.stubs(:allow_pull?).returns(true)
 
     app = App.new({
-      :root => repositories_root, :adapter_factory => GitAdapterFactory.new
+      :root => repositories_root, :git_adapter_factory => GitAdapterFactory.new
     })
     session = Rack::Test::Session.new(app)
     session.get "#{example_repo_urn}/info/refs?service=git-upload-pack"
