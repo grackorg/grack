@@ -7,6 +7,7 @@ gem "coveralls", :require => false
 
 group :test do
   gem "test"
+  gem 'test-unit'
   gem "rack-test", "~> 0.6.2"
   gem "mocha"
   gem "simplecov", :require => false # Disable for ruby 1.8
