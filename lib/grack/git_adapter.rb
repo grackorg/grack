@@ -125,7 +125,7 @@ module Grack
       opts = {:err => :close}
       opts[:chdir] = dir unless dir.nil?
       cmd << opts
-      IO.popen(cmd, 'r+') do |pipe|
+      IO.popen(cmd, 'r+b') do |pipe|
         while ! io_in.nil? && chunk = io_in.read(READ_SIZE) do
           pipe.write(chunk)
         end
