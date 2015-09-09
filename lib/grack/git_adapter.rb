@@ -115,11 +115,14 @@ module Grack
     ##
     # Runs the Git utilty with the given subcommand.
     #
-    # @param [String] cmd
-    # @param [Array<String>] args
-    # @param [#read, nil] io_in
-    # @param [#write, nil] io_out
-    # @param [String] dir
+    # @param [String] cmd the Git subcommand to invoke.
+    # @param [Array<String>] args additional arguments for the command.
+    # @param [#read, nil] io_in a readable, IO-like source of data to write to
+    #   the Git command.
+    # @param [#write, nil] io_out a writable, IO-like sink for output produced
+    #   by the Git command.
+    # @param [String, nil] dir a directory to switch to before invoking the Git
+    #   command.
     def command(cmd, args, io_in, io_out, dir = nil)
       cmd = [git_path, cmd] + args
       opts = {:err => :close}
