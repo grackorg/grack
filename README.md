@@ -1,3 +1,7 @@
+[![Gem Version](https://badge.fury.io/rb/grack.svg)](http://badge.fury.io/rb/grack)
+[![Build Status](https://travis-ci.org/grackorg/grack.svg?branch=master)](https://travis-ci.org/grackorg/grack)
+[![Dependency Status](https://gemnasium.com/grackorg/grack.svg)](https://gemnasium.com/grackorg/grack)
+
 # Grack - Ruby/Rack Git Smart HTTP Server Handler
 
 This project aims to replace the builtin git-http-backend CGI handler
