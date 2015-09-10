@@ -38,20 +38,24 @@ Adapter.
   # automatically generated list by rake to identify files potentially missed by
   # inclusion or exclusion rules.
   s.files = %w(
+    .travis.yml
     .yardopts
     LICENSE
     NEWS.md
     README.md
     Rakefile
+    lib/git_adapter.rb
+    lib/grack.rb
     lib/grack/app.rb
+    lib/grack/compatible_git_adapter.rb
     lib/grack/file_streamer.rb
     lib/grack/git_adapter.rb
-    lib/grack/git_adapter_factory.rb
     lib/grack/io_streamer.rb
   )
   # Explicitly list all test files that should be included into the gem here.
   s.test_files   = %w(
     tests/app_test.rb
+    tests/compatible_git_adapter_test.rb
     tests/example/_git/COMMIT_EDITMSG
     tests/example/_git/HEAD
     tests/example/_git/config
