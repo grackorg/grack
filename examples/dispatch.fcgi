@@ -5,8 +5,8 @@ require 'grack/app'
 require 'grack/git_adapter'
 
 config = {
-  :root => "/opt",
-  :upload_pack => true,
-  :receive_pack => false,
+  :root => '/opt',
+  :allow_pull => true,
+  :allow_push => false,
 }
 Rack::Handler::FastCGI.run(Grack::App.new(config))
