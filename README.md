@@ -57,18 +57,19 @@ backend by specifying a different Adapter. See below for a list.
 ### Git Adapters
 
 Grack makes calls to the git binary through the GitAdapter abstraction class.
-Grack can be made to use a different backend by specifying a different adapter
-factory class in Grack's configuration that provides new adapter instances per
-request. For example:
+Grack can be made to use a different backend by specifying a call-able object,
+such as a lambda, in Grack's configuration that provides new adapter instances
+per request. For example:
 
 ```ruby
-Grack::App.new(:adapter => Grack::RJGitAdapter)
+Grack::App.new(:git_adapter_factory => ->{ MyAdapter.new })
 ```
 
 Alternative adapters available:
 * [rjgit_grack](http://github.com/dometto/rjgit_grack) lets Grack use the
   [RJGit](http://github.com/repotag/rjgit) gem to implement Smart HTTP in pure
-  Jruby.
+  Jruby. (Currently requires use of backward compatibility support via
+  Grack::CompatibleGitAdapter)
 
 ### Developing Adapters
 
@@ -106,13 +107,13 @@ In `config.ru`:
 
 ```ruby
 require 'grack/app'
-require 'grack/git_adapter_factory'
+require 'grack/git_adapter'
 
 config = {
   :root => '/path/to/bare/repositories',
   :allow_push => true,
   :allow_pull => true,
-  :adapter_factory => Grack::GitAdapterFactory.new
+  :git_adapter_factory => ->{ GitAdapter.new }
 }
 
 run Grack::App.new(config)
