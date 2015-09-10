@@ -12,7 +12,7 @@ require 'zlib'
 require 'grack/app'
 require 'grack/git_adapter'
 
-class RequestHandlerTest < Minitest::Test
+class AppTest < Minitest::Test
   include Rack::Test::Methods
   include Grack
 
@@ -25,7 +25,7 @@ class RequestHandlerTest < Minitest::Test
       :root => repositories_root,
       :allow_pull => true,
       :allow_push => true,
-      :git_adapter_factory => GitAdapterFactory.new(git_path)
+      :git_adapter_factory => ->{ GitAdapter.new(git_path) }
     }
   end
 
@@ -194,7 +194,7 @@ class RequestHandlerTest < Minitest::Test
     GitAdapter.any_instance.stubs(:allow_push?).returns(false)
 
     app = App.new({
-      :root => repositories_root, :git_adapter_factory => GitAdapterFactory.new
+      :root => repositories_root
     })
     session = Rack::Test::Session.new(app)
     session.get "#{example_repo_urn}/info/refs?service=git-receive-pack"
@@ -204,9 +204,7 @@ class RequestHandlerTest < Minitest::Test
   def test_git_adapter_allow_push
     GitAdapter.any_instance.stubs(:allow_push?).returns(true)
 
-    app = App.new({
-      :root => repositories_root, :git_adapter_factory => GitAdapterFactory.new
-    })
+    app = App.new(:root => repositories_root)
     session = Rack::Test::Session.new(app)
     session.get "#{example_repo_urn}/info/refs?service=git-receive-pack"
     assert_equal 200, session.last_response.status
@@ -215,9 +213,7 @@ class RequestHandlerTest < Minitest::Test
   def test_git_adapter_forbid_pull
     GitAdapter.any_instance.stubs(:allow_pull?).returns(false)
 
-    app = App.new({
-      :root => repositories_root, :git_adapter_factory => GitAdapterFactory.new
-    })
+    app = App.new(:root => repositories_root)
     session = Rack::Test::Session.new(app)
     session.get "#{example_repo_urn}/info/refs?service=git-upload-pack"
     assert_equal 404, session.last_response.status
@@ -226,9 +222,7 @@ class RequestHandlerTest < Minitest::Test
   def test_git_adapter_allow_pull
     GitAdapter.any_instance.stubs(:allow_pull?).returns(true)
 
-    app = App.new({
-      :root => repositories_root, :git_adapter_factory => GitAdapterFactory.new
-    })
+    app = App.new(:root => repositories_root)
     session = Rack::Test::Session.new(app)
     session.get "#{example_repo_urn}/info/refs?service=git-upload-pack"
     assert_equal 200, session.last_response.status
@@ -295,6 +289,103 @@ class RequestHandlerTest < Minitest::Test
     assert_equal 404, r.status
     get "#{example_repo_urn}/objects/packs/pack-0000000000000000000000000000000000000000.idx"
     assert_equal 404, r.status
+  end
+
+  def test_config_project_root_used_when_root_not_set
+    session = Rack::Test::Session.new(
+      App.new(:project_root => repositories_root)
+    )
+
+    session.get "#{example_repo_urn}/info/refs"
+    assert_equal 200, session.last_response.status
+  end
+
+  def test_config_project_root_ignored_when_root_is_set
+    session = Rack::Test::Session.new(
+      App.new(:project_root => 'unlikely/path', :root => repositories_root)
+    )
+
+    session.get "#{example_repo_urn}/info/refs"
+    assert_equal 200, session.last_response.status
+  end
+
+  def test_config_upload_pack_used_when_allow_pull_not_set
+    session = Rack::Test::Session.new(
+      App.new(:root => repositories_root, :upload_pack => false)
+    )
+
+    session.get "#{example_repo_urn}/info/refs?service=git-upload-pack"
+    assert_equal 404, session.last_response.status
+  end
+
+  def test_config_upload_pack_ignored_when_allow_pull_is_set
+    session = Rack::Test::Session.new(
+      App.new(
+        :root => repositories_root, :upload_pack => true, :allow_pull => false
+      )
+    )
+
+    session.get "#{example_repo_urn}/info/refs?service=git-upload-pack"
+    assert_equal 404, session.last_response.status
+  end
+
+  def test_config_receive_pack_used_when_allow_push_not_set
+    session = Rack::Test::Session.new(
+      App.new(:root => repositories_root, :receive_pack => false)
+    )
+
+    session.get "#{example_repo_urn}/info/refs?service=git-receive-pack"
+    assert_equal 404, session.last_response.status
+  end
+
+  def test_config_receive_pack_ignored_when_allow_push_is_set
+    session = Rack::Test::Session.new(
+      App.new(
+        :root => repositories_root, :receive_pack => true, :allow_push => false
+      )
+    )
+
+    session.get "#{example_repo_urn}/info/refs?service=git-receive-pack"
+    assert_equal 404, session.last_response.status
+  end
+
+  def test_config_adapter_with_GitAdapter
+    session = Rack::Test::Session.new(
+      App.new(:root => repositories_root, :adapter => GitAdapter)
+    )
+
+    session.get "#{example_repo_urn}/objects/info/packs"
+    assert_equal 200, session.last_response.status
+    assert_match /P pack-(.*?).pack/, session.last_response.body
+  end
+
+  def test_config_adapter_with_custom_adapter
+    git_adapter = mock('git_adapter')
+    git_adapter.
+      expects(:update_server_info).
+      with("#{repositories_root}#{example_repo_urn}")
+    git_adapter_class = mock('git_adapter_class')
+    git_adapter_class.expects(:new).with.returns(git_adapter)
+    session = Rack::Test::Session.new(
+      App.new(:root => repositories_root, :adapter => git_adapter_class)
+    )
+
+    session.get "#{example_repo_urn}/info/refs"
+    assert_equal 200, session.last_response.status
+  end
+
+  def test_config_adapter_ignored_when_adapter_factory_is_set
+    git_adapter_class = mock('git_adapter_class')
+    session = Rack::Test::Session.new(
+      App.new(
+        :root => repositories_root,
+        :adapter => git_adapter_class,
+        :git_adapter_factory => ->{ GitAdapter.new(git_path) }
+      )
+    )
+
+    session.get "#{example_repo_urn}/info/refs"
+    assert_equal 200, session.last_response.status
   end
 
   private

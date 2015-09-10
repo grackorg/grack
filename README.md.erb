@@ -57,13 +57,13 @@ factory class in Grack's configuration that provides new adapter instances per
 request. For example:
 
 ```ruby
-Grack::App.new(:adapter => Grack::RJGitAdapterFactory)
+Grack::App.new(:adapter => Grack::RJGitAdapter)
 ```
 
 Alternative adapters available:
 * [rjgit_grack](http://github.com/dometto/rjgit_grack) lets Grack use the
   [RJGit](http://github.com/repotag/rjgit) gem to implement Smart HTTP in pure
-  Jruby. (*NOT CURRENTLY COMPATIBLE*)
+  Jruby.
 
 ### Developing Adapters
 
