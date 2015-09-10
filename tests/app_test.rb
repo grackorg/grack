@@ -136,37 +136,43 @@ class AppTest < Minitest::Test
   end
 
   def test_loose_objects
-    content = File.read(File.join(example_repo, '/objects/31/d73eb4914a8ddb6cb0e4adf250777161118f90')).force_encoding('binary')
-    get "#{example_repo_urn}/objects/31/d73eb4914a8ddb6cb0e4adf250777161118f90"
+    obj_path = 'objects/31/d73eb4914a8ddb6cb0e4adf250777161118f90'
+    obj_file = File.join(example_repo, obj_path)
+    content = File.open(obj_file, 'rb') { |f| f.read }
+
+    get "#{example_repo_urn}/#{obj_path}"
     assert_equal 200, r.status
     assert_equal content, r.body
   end
 
   def test_pack_file
-    content = File.read(File.join(example_repo, '/objects/pack/pack-62c9f443d8405cd6da92dcbb4f849cc01a339c06.pack')).force_encoding('binary')
-    get "#{example_repo_urn}/objects/pack/pack-62c9f443d8405cd6da92dcbb4f849cc01a339c06.pack"
+    pack_path =
+      'objects/pack/pack-62c9f443d8405cd6da92dcbb4f849cc01a339c06.pack'
+    pack_file = File.join(example_repo, pack_path)
+    content = File.open(pack_file, 'rb') { |f| f.read }
+
+    get "#{example_repo_urn}/#{pack_path}"
     assert_equal 200, r.status
     assert_equal content, r.body
   end
 
   def test_index_file
-    content = File.read(File.join(example_repo, '/objects/pack/pack-62c9f443d8405cd6da92dcbb4f849cc01a339c06.idx')).force_encoding('binary')
-    get "#{example_repo_urn}/objects/pack/pack-62c9f443d8405cd6da92dcbb4f849cc01a339c06.idx"
+    idx_path = 'objects/pack/pack-62c9f443d8405cd6da92dcbb4f849cc01a339c06.idx'
+    idx_file = File.join(example_repo, idx_path)
+    content = File.open(idx_file, 'rb') { |f| f.read }
+
+    get "#{example_repo_urn}/#{idx_path}"
     assert_equal 200, r.status
     assert_equal content, r.body
   end
 
   def test_text_file
-    get "#{example_repo_urn}/HEAD"
-    assert_equal 200, r.status
-    assert_equal 23, r.body.size
-  end
+    head_file = File.join(example_repo, 'HEAD')
+    content = File.open(head_file, 'rb') { |f| f.read }
 
-  def test_no_size_avail
-    File.stubs('size?').returns(false)
     get "#{example_repo_urn}/HEAD"
     assert_equal 200, r.status
-    assert_equal 23, r.body.size
+    assert_equal content, r.body
   end
 
   def test_config_allow_pull_off
