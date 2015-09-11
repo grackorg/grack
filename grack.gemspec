@@ -5,7 +5,7 @@ Gem::Specification.new do |s|
   s.authors     = ['Scott Chacon', 'Dawa Ometto', 'Jeremy Bopp']
   s.email       =
     ['schacon@gmail.com', 'dawa.ometto@phil.uu.nl', 'jeremy@bopp.net']
-  s.homepage    = 'https://github.com/schacon/grack'
+  s.homepage    = 'https://github.com/grackorg/grack'
   s.license     = 'MIT'
   s.summary     = <<-EOS
 This project aims to replace the builtin git-http-backend CGI handler

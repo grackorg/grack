@@ -9,8 +9,8 @@ distributed with C Git with a Rack application.
 
 ## Links
 
-* Homepage :: https://github.com/schacon/grack
-* Source :: https://github.com/schacon/grack.git
+* Homepage :: https://github.com/grackorg/grack
+* Source :: https://github.com/grackorg/grack.git
 
 ## Description
 
@@ -53,6 +53,14 @@ Since the git-http-backend is really just a simple wrapper for the upload-pack
 and receive-pack processes with the '--stateless-rpc' option, this does not
 actually re-implement very much. However, it is possible to use a different
 backend by specifying a different Adapter. See below for a list.
+
+Note that while it is technically possible to host non-bare repositories with
+this gem, it is discouraged.  The only somewhat safe option is to serve such a
+repository as read-only since there is a greater risk of arbitrary filesystem
+traversal when a checkout tree must be traversed to reach the repository
+administrative area (`.git` directory).  Additionally, any recent version of Git
+prevents pushes into non-bare repositories by default since pushing into the
+currently checked out branch can effectively "break" the checkout tree.
 
 ### Git Adapters
 
