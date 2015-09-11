@@ -12,7 +12,7 @@ require 'grack/git_adapter'
 class GitAdapterTest < Minitest::Test
   include Grack
 
-  GIT_RECEIVE_RESPONSE = %r{\A001b# service=receive-pack\n0000[0-9a-f]{4}cb067e06bdf6e34d4abebf6cf2de85d65a52c65e refs/heads/master\000 report-status delete-refs side-band-64k quiet ofs-delta.*\n0000\z}
+  GIT_RECEIVE_RESPONSE = %r{\A001b# service=receive-pack\n0000[0-9a-f]{4}cb067e06bdf6e34d4abebf6cf2de85d65a52c65e refs/heads/master\000\s*report-status delete-refs side-band-64k quiet ofs-delta.*\n0000\z}
 
   def git_config_set(name, value)
     system(git_path, 'config', '--local', name, value, :chdir => example_repo)
