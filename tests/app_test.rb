@@ -49,6 +49,15 @@ class AppTest < Minitest::Test
     assert_match 'multi_ack_detailed', r.body
   end
 
+  def test_no_access_upload_pack_advertisement
+    session = Rack::Test::Session.new(
+      App.new(app_config.merge!(:allow_pull => false))
+    )
+
+    session.get "#{example_repo_urn}/info/refs?service=git-upload-pack"
+    assert_equal 403, session.last_response.status
+  end
+
   def test_no_access_wrong_content_type_up
     post "#{example_repo_urn}/git-upload-pack"
     assert_equal 403, r.status
@@ -78,6 +87,7 @@ class AppTest < Minitest::Test
 
   def test_upload_pack_rpc
     IO.stubs(:popen).returns(MockProcess.new)
+
     post(
       "#{example_repo_urn}/git-upload-pack",
       {},
@@ -85,6 +95,19 @@ class AppTest < Minitest::Test
     )
     assert_equal 200, r.status
     assert_equal 'application/x-git-upload-pack-result', r.headers['Content-Type']
+  end
+
+  def test_no_access_upload_pack_rpc
+    session = Rack::Test::Session.new(
+      App.new(app_config.merge!(:allow_pull => false))
+    )
+
+    session.post(
+      "#{example_repo_urn}/git-upload-pack",
+      {},
+      {'CONTENT_TYPE' => 'application/x-git-upload-pack-request'}
+    )
+    assert_equal 403, session.last_response.status
   end
 
   def test_upload_pack_rpc_compressed
@@ -104,24 +127,39 @@ class AppTest < Minitest::Test
       }
     )
     assert_equal 200, r.status
-    assert_equal 'application/x-git-upload-pack-result', r.headers['Content-Type']
+    assert_equal 'application/x-git-upload-pack-result',
+                 r.headers['Content-Type']
   end
 
   def test_receive_pack_advertisement
     get "#{example_repo_urn}/info/refs?service=git-receive-pack"
     assert_equal 200, r.status
-    assert_equal 'application/x-git-receive-pack-advertisement', r.headers['Content-Type']
+    assert_equal 'application/x-git-receive-pack-advertisement',
+                 r.headers['Content-Type']
     assert_equal '001f# service=git-receive-pack', r.body.split("\n").first
     assert_match 'report-status', r.body
     assert_match 'delete-refs', r.body
     assert_match 'ofs-delta', r.body
   end
 
+  def test_no_access_receive_pack_advertisement
+    session = Rack::Test::Session.new(
+      App.new(app_config.merge!(:allow_push => false))
+    )
+
+    session.get "#{example_repo_urn}/info/refs?service=git-receive-pack"
+    assert_equal 403, session.last_response.status
+  end
+
   def test_recieve_pack_rpc
-    IO.stubs(:popen).yields(MockProcess.new)
-    post "#{example_repo_urn}/git-receive-pack", {}, {'CONTENT_TYPE' => 'application/x-git-receive-pack-request'}
-    assert_equal 200, r.status
-    assert_equal 'application/x-git-receive-pack-result', r.headers['Content-Type']
+    session = Rack::Test::Session.new(
+      App.new(app_config.merge!(:allow_push => false))
+    )
+
+    session.post "#{example_repo_urn}/git-receive-pack",
+                 {},
+                 {'CONTENT_TYPE' => 'application/x-git-receive-pack-request'}
+    assert_equal 403, session.last_response.status
   end
 
   def test_info_refs_dumb
@@ -129,10 +167,28 @@ class AppTest < Minitest::Test
     assert_equal 200, r.status
   end
 
+  def test_no_access_info_refs_dumb
+    session = Rack::Test::Session.new(
+      App.new(app_config.merge!(:allow_pull => false))
+    )
+
+    session.get "#{example_repo_urn}/info/refs"
+    assert_equal 403, session.last_response.status
+  end
+
   def test_info_packs
     get "#{example_repo_urn}/objects/info/packs"
     assert_equal 200, r.status
     assert_match /P pack-(.*?).pack/, r.body
+  end
+
+  def test_no_access_info_packs
+    session = Rack::Test::Session.new(
+      App.new(app_config.merge!(:allow_pull => false))
+    )
+
+    session.get "#{example_repo_urn}/objects/info/packs"
+    assert_equal 403, session.last_response.status
   end
 
   def test_loose_objects
@@ -143,6 +199,16 @@ class AppTest < Minitest::Test
     get "#{example_repo_urn}/#{obj_path}"
     assert_equal 200, r.status
     assert_equal content, r.body
+  end
+
+  def test_no_access_loose_objects
+    obj_path = 'objects/31/d73eb4914a8ddb6cb0e4adf250777161118f90'
+    session = Rack::Test::Session.new(
+      App.new(app_config.merge!(:allow_pull => false))
+    )
+
+    session.get "#{example_repo_urn}/#{obj_path}"
+    assert_equal 403, session.last_response.status
   end
 
   def test_pack_file
@@ -156,6 +222,17 @@ class AppTest < Minitest::Test
     assert_equal content, r.body
   end
 
+  def test_no_access_pack_file
+    pack_path =
+      'objects/pack/pack-62c9f443d8405cd6da92dcbb4f849cc01a339c06.pack'
+    session = Rack::Test::Session.new(
+      App.new(app_config.merge!(:allow_pull => false))
+    )
+
+    session.get "#{example_repo_urn}/#{pack_path}"
+    assert_equal 403, session.last_response.status
+  end
+
   def test_index_file
     idx_path = 'objects/pack/pack-62c9f443d8405cd6da92dcbb4f849cc01a339c06.idx'
     idx_file = File.join(example_repo, idx_path)
@@ -164,6 +241,16 @@ class AppTest < Minitest::Test
     get "#{example_repo_urn}/#{idx_path}"
     assert_equal 200, r.status
     assert_equal content, r.body
+  end
+
+  def test_no_access_index_file
+    idx_path = 'objects/pack/pack-62c9f443d8405cd6da92dcbb4f849cc01a339c06.idx'
+    session = Rack::Test::Session.new(
+      App.new(app_config.merge!(:allow_pull => false))
+    )
+
+    session.get "#{example_repo_urn}/#{idx_path}"
+    assert_equal 403, session.last_response.status
   end
 
   def test_text_file
@@ -175,12 +262,21 @@ class AppTest < Minitest::Test
     assert_equal content, r.body
   end
 
+  def test_no_access_text_file
+    session = Rack::Test::Session.new(
+      App.new(app_config.merge!(:allow_pull => false))
+    )
+
+    session.get "#{example_repo_urn}/HEAD"
+    assert_equal 403, session.last_response.status
+  end
+
   def test_config_allow_pull_off
     session = Rack::Test::Session.new(
       App.new(app_config.merge(:allow_pull => false))
     )
     session.get "#{example_repo_urn}/info/refs?service=git-upload-pack"
-    assert_equal 404, session.last_response.status
+    assert_equal 403, session.last_response.status
   end
 
   def test_config_allow_push_off
@@ -188,7 +284,7 @@ class AppTest < Minitest::Test
       App.new(app_config.merge(:allow_push => false))
     )
     session.get "#{example_repo_urn}/info/refs?service=git-receive-pack"
-    assert_equal 404, session.last_response.status
+    assert_equal 403, session.last_response.status
   end
 
   def test_config_bad_service
@@ -204,7 +300,7 @@ class AppTest < Minitest::Test
     })
     session = Rack::Test::Session.new(app)
     session.get "#{example_repo_urn}/info/refs?service=git-receive-pack"
-    assert_equal 404, session.last_response.status
+    assert_equal 403, session.last_response.status
   end
 
   def test_git_adapter_allow_push
@@ -222,7 +318,7 @@ class AppTest < Minitest::Test
     app = App.new(:root => repositories_root)
     session = Rack::Test::Session.new(app)
     session.get "#{example_repo_urn}/info/refs?service=git-upload-pack"
-    assert_equal 404, session.last_response.status
+    assert_equal 403, session.last_response.status
   end
 
   def test_git_adapter_allow_pull
@@ -321,7 +417,7 @@ class AppTest < Minitest::Test
     )
 
     session.get "#{example_repo_urn}/info/refs?service=git-upload-pack"
-    assert_equal 404, session.last_response.status
+    assert_equal 403, session.last_response.status
   end
 
   def test_config_upload_pack_ignored_when_allow_pull_is_set
@@ -332,7 +428,7 @@ class AppTest < Minitest::Test
     )
 
     session.get "#{example_repo_urn}/info/refs?service=git-upload-pack"
-    assert_equal 404, session.last_response.status
+    assert_equal 403, session.last_response.status
   end
 
   def test_config_receive_pack_used_when_allow_push_not_set
@@ -341,7 +437,7 @@ class AppTest < Minitest::Test
     )
 
     session.get "#{example_repo_urn}/info/refs?service=git-receive-pack"
-    assert_equal 404, session.last_response.status
+    assert_equal 403, session.last_response.status
   end
 
   def test_config_receive_pack_ignored_when_allow_push_is_set
@@ -352,7 +448,7 @@ class AppTest < Minitest::Test
     )
 
     session.get "#{example_repo_urn}/info/refs?service=git-receive-pack"
-    assert_equal 404, session.last_response.status
+    assert_equal 403, session.last_response.status
   end
 
   def test_config_adapter_with_GitAdapter
@@ -373,7 +469,11 @@ class AppTest < Minitest::Test
     git_adapter_class = mock('git_adapter_class')
     git_adapter_class.expects(:new).with.returns(git_adapter)
     session = Rack::Test::Session.new(
-      App.new(:root => repositories_root, :adapter => git_adapter_class)
+      App.new(
+        :root => repositories_root,
+        :allow_pull => true,
+        :adapter => git_adapter_class
+      )
     )
 
     session.get "#{example_repo_urn}/info/refs"

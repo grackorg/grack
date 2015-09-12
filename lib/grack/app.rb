@@ -102,6 +102,34 @@ module Grack
     attr_reader :root
 
     ##
+    # The path to the repository.
+    attr_reader :repository_uri
+
+    ##
+    # The HTTP verb of the request.
+    attr_reader :request_verb
+
+    ##
+    # The requested pack type.  Will be +nil+ for requests that do no involve
+    # pack RPCs.
+    attr_reader :pack_type
+
+    ##
+    # @return [Boolean] +true+ if the request is authorized; otherwise, +false+.
+    def authorized?
+      return allow_pull? if need_read?
+      return allow_push?
+    end
+
+    ##
+    # @return [Boolean] +true+ if read permissions are needed; otherwise,
+    #   +false+.
+    def need_read?
+      (request_verb == 'GET' && pack_type != 'git-receive-pack') ||
+        request_verb == 'POST' && pack_type == 'git-upload-pack'
+    end
+
+    ##
     # Determines whether or not pushes into the requested repository are
     # allowed.
     #
@@ -132,12 +160,13 @@ module Grack
 
       ROUTES.each do |path_matcher, verb, handler|
         path_info.match(path_matcher) do |match|
-          repository_uri = match[1]
+          @repository_uri = match[1]
+          @request_verb = verb
 
-          return bad_request if bad_uri?(repository_uri)
           return method_not_allowed unless verb == request.request_method
+          return bad_request if bad_uri?(@repository_uri)
 
-          git.repository_path = root + repository_uri
+          git.repository_path = root + @repository_uri
           return not_found unless git.exist?
 
           return send(handler, *match[2..-1])
@@ -155,13 +184,14 @@ module Grack
     #
     # @return a Rack response object.
     def handle_pack(pack_type)
-      unless request.content_type == "application/x-#{pack_type}-request" &&
-             pack_type_allowed?(pack_type)
+      @pack_type = pack_type
+      unless request.content_type == "application/x-#{@pack_type}-request" &&
+             valid_pack_type? && authorized?
         return no_access
       end
 
-      headers = {'Content-Type' => "application/x-#{pack_type}-result"}
-      exchange_pack(pack_type, headers, request_io_in)
+      headers = {'Content-Type' => "application/x-#{@pack_type}-result"}
+      exchange_pack(headers, request_io_in)
     end
 
     ##
@@ -174,17 +204,18 @@ module Grack
     # 
     # @return a Rack response object.
     def info_refs
-      pack_type = request.params['service']
+      @pack_type = request.params['service']
+      return no_access unless authorized?
 
-      if pack_type_allowed?(pack_type)
-        headers = hdr_nocache
-        headers['Content-Type'] = "application/x-#{pack_type}-advertisement"
-        exchange_pack(pack_type, headers, nil, {:advertise_refs => true})
-      elsif pack_type.nil?
+      if @pack_type.nil?
         git.update_server_info
         send_file(
           git.file('info/refs'), 'text/plain; charset=utf-8', hdr_nocache
         )
+      elsif valid_pack_type?
+        headers = hdr_nocache
+        headers['Content-Type'] = "application/x-#{@pack_type}-advertisement"
+        exchange_pack(headers, nil, {:advertise_refs => true})
       else
         not_found
       end
@@ -198,6 +229,7 @@ module Grack
     #
     # @return a Rack response object.
     def info_packs(path)
+      return no_access unless authorized?
       send_file(git.file(path), 'text/plain; charset=utf-8', hdr_nocache)
     end
 
@@ -211,6 +243,7 @@ module Grack
     #
     # @return a Rack response object.
     def loose_object(path)
+      return no_access unless authorized?
       send_file(
         git.file(path), 'application/x-git-loose-object', hdr_cache_forever
       )
@@ -226,6 +259,7 @@ module Grack
     #
     # @return a Rack response object.
     def pack_file(path)
+      return no_access unless authorized?
       send_file(
         git.file(path), 'application/x-git-packed-objects', hdr_cache_forever
       )
@@ -242,6 +276,7 @@ module Grack
     #
     # @return a Rack response object.
     def idx_file(path)
+      return no_access unless authorized?
       send_file(
         git.file(path),
         'application/x-git-packed-objects-toc',
@@ -259,6 +294,7 @@ module Grack
     #
     # @return a Rack response object.
     def text_file(path)
+      return no_access unless authorized?
       send_file(git.file(path), 'text/plain', hdr_nocache)
     end
 
@@ -287,8 +323,6 @@ module Grack
     # Opens a tunnel for the pack file exchange protocol between the client and
     # the Git adapter.
     #
-    # @param [String] pack_type the type of pack exchange to perform per the
-    #   request.
     # @param [Hash] headers headers to provide in the Rack response.
     # @param [#read] io_in a readable, IO-like object providing client input
     #   data.
@@ -296,7 +330,7 @@ module Grack
     #   method.
     # 
     # @return a Rack response object.
-    def exchange_pack(pack_type, headers, io_in, opts = {})
+    def exchange_pack(headers, io_in, opts = {})
       Rack::Response.new([], 200, headers).finish do |response|
         git.handle_pack(pack_type, io_in, response, opts)
       end
@@ -313,28 +347,11 @@ module Grack
     end
 
     ##
-    # Determines whether or not _pack_type_ is valid.
+    # Determines whether or not the requested pack type is valid.
     #
-    # @param [String] pack_type the name of a pack type.
-    #
-    # @return [Boolean] +true+ if _pack_type_ is valid; otherwise, +false+.
-    def pack_type_valid?(pack_type)
+    # @return [Boolean] +true+ if the pack type is valid; otherwise, +false+.
+    def valid_pack_type?
       VALID_SERVICE_TYPES.include?(pack_type)
-    end
-
-    ##
-    # Determines whether or not _pack_type_ is allowed for the requested
-    # repository.
-    #
-    # @param [String] pack_type the name of a pack type.
-    #
-    # @return [Boolean] +true+ if _pack_type_ is allowed for the requested
-    #   repository; otherwise, +false+.
-    def pack_type_allowed?(pack_type)
-      return false unless pack_type_valid?(pack_type)
-      return true if pack_type == 'git-receive-pack' && allow_push?
-      return true if pack_type == 'git-upload-pack' && allow_pull?
-      false
     end
 
     ##
