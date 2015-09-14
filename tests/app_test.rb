@@ -151,7 +151,20 @@ class AppTest < Minitest::Test
     assert_equal 403, session.last_response.status
   end
 
-  def test_recieve_pack_rpc
+  def test_receive_pack_rpc
+    IO.stubs(:popen).returns(MockProcess.new)
+
+    post(
+      "#{example_repo_urn}/git-receive-pack",
+      {},
+      {'CONTENT_TYPE' => 'application/x-git-receive-pack-request'}
+    )
+    assert_equal 200, r.status
+    assert_equal 'application/x-git-receive-pack-result',
+                 r.headers['Content-Type']
+  end
+
+  def test_no_access_receive_pack_rpc
     session = Rack::Test::Session.new(
       App.new(app_config.merge!(:allow_push => false))
     )
