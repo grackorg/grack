@@ -1,26 +1,25 @@
+<%
+  # This is the template file for README.md.  The gemspec details are available
+  # within the _spec_ attribute, and all methods defined in the Rakefile are
+  # also available.  The Rakefile will use this file to regenerate README.md
+  # when necessary.
+-%>
 [![Gem Version](https://badge.fury.io/rb/grack.svg)](http://badge.fury.io/rb/grack)
 [![Build Status](https://travis-ci.org/grackorg/grack.svg?branch=master)](https://travis-ci.org/grackorg/grack)
 [![Dependency Status](https://gemnasium.com/grackorg/grack.svg)](https://gemnasium.com/grackorg/grack)
 
 # Grack - Ruby/Rack Git Smart HTTP Server Handler
 
-This project aims to replace the builtin git-http-backend CGI handler
-distributed with C Git with a Rack application.
+<%= word_wrap(spec.summary) %>
 
 ## Links
 
-* Homepage :: https://github.com/grackorg/grack
+* Homepage :: <%= spec.homepage %>
 * Source :: https://github.com/grackorg/grack.git
 
 ## Description
 
-This project aims to replace the builtin git-http-backend CGI handler
-distributed with C Git with a Rack application. By default, Grack uses calls to
-git on the system to implement Smart HTTP. Since the git-http-backend is really
-just a simple wrapper for the upload-pack and receive-pack processes with the
-'--stateless-rpc' option, this does not actually re-implement very much.
-However, it is possible to use a different backend by specifying a different
-Adapter.
+<%= spec.description -%>
 
 The default git-http-backend only runs as a CGI script, and specifically is
 only targeted for Apache 2.x usage (it requires PATH_INFO to be set and
@@ -138,20 +137,16 @@ $ git clone http://localhost:8080/your-repository.git
 
 * Ruby >=1.9.3
 * Git >=1.7 (if using the included Git adapter)
-* rack (>= 0)
+<% spec.runtime_dependencies.each do |dependency| -%>
+* <%= dependency %>
+<% end -%>
 
 ## Development Requirements
 
 * All runtime requirements
-* rake (>= 10.1.1, ~> 10.1)
-* rack-test (>= 0.6.3, ~> 0.6)
-* minitest (>= 5.8.0, ~> 5.8)
-* mocha (>= 1.1.0, ~> 1.1)
-* simplecov (>= 0.10.0, ~> 0.10)
-* yard (>= 0.8.7.3, ~> 0.8.7)
-* redcarpet (>= 3.1.0, ~> 3.1)
-* github-markup (>= 1.0.2, ~> 1.0)
-* pry (~> 0)
+<% spec.development_dependencies.each do |dependency| -%>
+* <%= dependency.name %> (<%= dependency.requirement %>)
+<% end -%>
 
 ## Contributing
 
@@ -179,33 +174,13 @@ documentation.
 
 Thanks to all contributors.  Without your help this project would not exist.
 
-* Scott Chacon :: schacon@gmail.com
-* Dawa Ometto :: dawa.ometto@phil.uu.nl
-* Jeremy Bopp :: jeremy@bopp.net
+<% spec.authors.zip(spec.email).each do |author, email| -%>
+* <%= author %> :: <%= email %>
+<% end -%>
 
 ## License
 
 ```
-(The MIT License)
-
-Copyright (c) 2015 Scott Chacon <schacon@gmail.com>
-
-Permission is hereby granted, free of charge, to any person obtaining
-a copy of this software and associated documentation files (the
-'Software'), to deal in the Software without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Software, and to
-permit persons to whom the Software is furnished to do so, subject to
-the following conditions:
-
-The above copyright notice and this permission notice shall be
-included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+<%= File.read('LICENSE') -%>
 ```
+<% # vim: set ts=2 sw=2 et: -%>
