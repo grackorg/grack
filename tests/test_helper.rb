@@ -1,6 +1,9 @@
 require 'pathname'
 require 'simplecov'
 require 'tmpdir'
+require 'coveralls'
+
+Coveralls.wear!
 
 SimpleCov.start do
   add_filter 'tests/'
