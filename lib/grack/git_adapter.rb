@@ -50,10 +50,7 @@ module Grack
     def handle_pack(pack_type, io_in, io_out, opts = {})
       args = %w{--stateless-rpc}
       if opts.fetch(:advertise_refs, false)
-        str = "# service=#{pack_type}\n"
-        io_out.write('%04x' % (str.size + 4))
-        io_out.write(str)
-        io_out.write('0000')
+        io_out.write(advertisement_prefix(pack_type))
         args << '--advertise-refs'
       end
       args << repository_path.to_s
@@ -101,6 +98,13 @@ module Grack
     ##
     # The path to use for running the git utility.
     attr_reader :git_path
+
+    ##
+    # The string to prepand before ref advertisements
+    def advertisement_prefix(pack_type)
+      str = "# service=#{pack_type}\n"
+      '%04x' % (str.size + 4) << "#{str}0000"
+    end
 
     ##
     # @param [String] key a key to look up in the Git repository configuration.
