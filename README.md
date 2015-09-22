@@ -75,7 +75,7 @@ Grack::App.new(:git_adapter_factory => ->{ MyAdapter.new })
 ```
 
 Alternative adapters available:
-* [rjgit_grack](http://github.com/dometto/rjgit_grack) lets Grack use the
+* [rjgit_grack](http://github.com/grackorg/rjgit_grack) lets Grack use the
   [RJGit](http://github.com/repotag/rjgit) gem to implement Smart HTTP in pure
   Jruby. (Currently requires use of backward compatibility support via
   Grack::CompatibleGitAdapter)
