@@ -121,7 +121,7 @@ config = {
   :root => '/path/to/bare/repositories',
   :allow_push => true,
   :allow_pull => true,
-  :git_adapter_factory => ->{ GitAdapter.new }
+  :git_adapter_factory => ->{ Grack::GitAdapter.new }
 }
 
 run Grack::App.new(config)
