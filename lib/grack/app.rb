@@ -47,8 +47,6 @@ module Grack
     # @option opts [#call] :git_adapter_factory (->{ GitAdapter.new }) a
     #   call-able object that creates Git adapter instances per request.
     def initialize(opts = {})
-      opts = convert_old_opts(opts)
-
       @root                = Pathname.new(opts.fetch(:root, '.')).expand_path
       @allow_push          = opts.fetch(:allow_push, nil)
       @allow_pull          = opts.fetch(:allow_pull, nil)
@@ -437,46 +435,5 @@ module Grack
       }
     end
 
-    ##
-    # Converts old configuration settings to current ones.
-    #
-    # @param [Hash] opts an options hash to convert.
-    # @option opts [String] :project_root a directory path containing 1 or more
-    #   Git repositories.
-    # @option opts [Boolean, nil] :receivepack determines whether or not to
-    #   allow pushes into the repositories.  +nil+ means to defer to the
-    #   requested repository.
-    # @option opts [Boolean, nil] :uploadpack determines whether or not to
-    #   allow fetches/pulls from the repositories.  +nil+ means to defer to the
-    #   requested repository.
-    # @option opts [#create] :adapter a class that provides an interface for
-    #   interacting with Git repositories.
-    #
-    # @return an options hash with current options set based on old ones.
-    def convert_old_opts(opts)
-      opts = opts.dup
-
-      if opts.key?(:project_root) && ! opts.key?(:root)
-        opts[:root] = opts.fetch(:project_root)
-      end
-      if opts.key?(:upload_pack) && ! opts.key?(:allow_pull)
-        opts[:allow_pull] = opts.fetch(:upload_pack)
-      end
-      if opts.key?(:receive_pack) && ! opts.key?(:allow_push)
-        opts[:allow_push] = opts.fetch(:receive_pack)
-      end
-      if opts.key?(:adapter) && ! opts.key?(:git_adapter_factory)
-        adapter = opts.fetch(:adapter)
-        opts[:git_adapter_factory] =
-          if GitAdapter == adapter
-            ->{ GitAdapter.new(opts.fetch(:git_path, 'git')) }
-          else
-            require 'grack/compatible_git_adapter'
-            ->{ CompatibleGitAdapter.new(adapter.new) }
-          end
-      end
-
-      opts
-    end
   end
 end

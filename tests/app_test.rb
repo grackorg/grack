@@ -406,64 +406,6 @@ class AppTest < Minitest::Test
     assert_equal 404, r.status
   end
 
-  def test_config_project_root_used_when_root_not_set
-    session = Rack::Test::Session.new(
-      App.new(:project_root => repositories_root)
-    )
-
-    session.get "#{example_repo_urn}/info/refs"
-    assert_equal 200, session.last_response.status
-  end
-
-  def test_config_project_root_ignored_when_root_is_set
-    session = Rack::Test::Session.new(
-      App.new(:project_root => 'unlikely/path', :root => repositories_root)
-    )
-
-    session.get "#{example_repo_urn}/info/refs"
-    assert_equal 200, session.last_response.status
-  end
-
-  def test_config_upload_pack_used_when_allow_pull_not_set
-    session = Rack::Test::Session.new(
-      App.new(:root => repositories_root, :upload_pack => false)
-    )
-
-    session.get "#{example_repo_urn}/info/refs?service=git-upload-pack"
-    assert_equal 403, session.last_response.status
-  end
-
-  def test_config_upload_pack_ignored_when_allow_pull_is_set
-    session = Rack::Test::Session.new(
-      App.new(
-        :root => repositories_root, :upload_pack => true, :allow_pull => false
-      )
-    )
-
-    session.get "#{example_repo_urn}/info/refs?service=git-upload-pack"
-    assert_equal 403, session.last_response.status
-  end
-
-  def test_config_receive_pack_used_when_allow_push_not_set
-    session = Rack::Test::Session.new(
-      App.new(:root => repositories_root, :receive_pack => false)
-    )
-
-    session.get "#{example_repo_urn}/info/refs?service=git-receive-pack"
-    assert_equal 403, session.last_response.status
-  end
-
-  def test_config_receive_pack_ignored_when_allow_push_is_set
-    session = Rack::Test::Session.new(
-      App.new(
-        :root => repositories_root, :receive_pack => true, :allow_push => false
-      )
-    )
-
-    session.get "#{example_repo_urn}/info/refs?service=git-receive-pack"
-    assert_equal 403, session.last_response.status
-  end
-
   def test_config_adapter_with_GitAdapter
     session = Rack::Test::Session.new(
       App.new(:root => repositories_root, :adapter => GitAdapter)
@@ -477,15 +419,25 @@ class AppTest < Minitest::Test
   def test_config_adapter_with_custom_adapter
     git_adapter = mock('git_adapter')
     git_adapter.
+      expects(:exist?).
+      returns(true)
+    git_adapter.
+      expects(:repository_path=).
+      returns(true)
+    git_adapter.
       expects(:update_server_info).
-      with("#{repositories_root}#{example_repo_urn}")
+      returns(true)
+    git_adapter.
+      expects(:file).
+      with('info/refs').
+      returns(FileStreamer.new(Tempfile.new('foo')))
     git_adapter_class = mock('git_adapter_class')
     git_adapter_class.expects(:new).with.returns(git_adapter)
     session = Rack::Test::Session.new(
       App.new(
         :root => repositories_root,
         :allow_pull => true,
-        :adapter => git_adapter_class
+        :git_adapter_factory => -> { git_adapter_class.new }
       )
     )
 
