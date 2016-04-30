@@ -1,10 +1,10 @@
 Gem::Specification.new do |s|
   s.name        = 'grack'
-  s.version     = '0.1.0.pre2'
+  s.version     = '0.1.0'
   s.platform    = Gem::Platform::RUBY
   s.authors     = ['Scott Chacon', 'Dawa Ometto', 'Jeremy Bopp']
   s.email       =
-    ['schacon@gmail.com', 'dawa.ometto@phil.uu.nl', 'jeremy@bopp.net']
+    ['schacon@gmail.com', 'd.ometto@gmail.com', 'jeremy@bopp.net']
   s.homepage    = 'https://github.com/grackorg/grack'
   s.license     = 'MIT'
   s.summary     = <<-EOS
@@ -47,7 +47,6 @@ Adapter.
     lib/git_adapter.rb
     lib/grack.rb
     lib/grack/app.rb
-    lib/grack/compatible_git_adapter.rb
     lib/grack/file_streamer.rb
     lib/grack/git_adapter.rb
     lib/grack/io_streamer.rb
@@ -55,7 +54,6 @@ Adapter.
   # Explicitly list all test files that should be included into the gem here.
   s.test_files   = %w(
     tests/app_test.rb
-    tests/compatible_git_adapter_test.rb
     tests/example/_git/COMMIT_EDITMSG
     tests/example/_git/HEAD
     tests/example/_git/config

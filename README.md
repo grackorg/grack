@@ -63,6 +63,31 @@ administrative area (`.git` directory).  Additionally, any recent version of Git
 prevents pushes into non-bare repositories by default since pushing into the
 currently checked out branch can effectively "break" the checkout tree.
 
+## Synopsis
+
+In `config.ru`:
+
+```ruby
+require 'grack/app'
+require 'grack/git_adapter'
+
+config = {
+  :root => '/path/to/bare/repositories',
+  :allow_push => true,
+  :allow_pull => true,
+  :git_adapter_factory => ->{ Grack::GitAdapter.new }
+}
+
+run Grack::App.new(config)
+```
+
+Then run:
+
+```sh
+$ bundle exec rackup --host localhost --port 8080 config.ru
+$ git clone http://localhost:8080/your-repository.git
+```
+
 ### Git Adapters
 
 Grack makes calls to the git binary through the GitAdapter abstraction class.
@@ -77,8 +102,7 @@ Grack::App.new(:git_adapter_factory => ->{ MyAdapter.new })
 Alternative adapters available:
 * [rjgit_grack](http://github.com/grackorg/rjgit_grack) lets Grack use the
   [RJGit](http://github.com/repotag/rjgit) gem to implement Smart HTTP in pure
-  Jruby. (Currently requires use of backward compatibility support via
-  Grack::CompatibleGitAdapter)
+  JRuby.
 
 ### Developing Adapters
 
@@ -106,34 +130,17 @@ implementation.
 * Limits push/pull access globally and per-repository.
 * Thread safe operation.
 
+### Hooks
+
+By default, grack doesn't support git hooks. This is because the default GitAdapter directly streams the requests to the `git-receive-pack` and `git-upload-pack` processes. However, alternative adapters may implement hooks.
+
+Adapters that support hooks:
+
+* [rjgit_grack](http://github.com/grackorg/rjgit_grack)
+
 ## Known Bugs/Limitations
 
 * Will likely block fully evented web servers when using the stock Git adapter.
-
-## Synopsis
-
-In `config.ru`:
-
-```ruby
-require 'grack/app'
-require 'grack/git_adapter'
-
-config = {
-  :root => '/path/to/bare/repositories',
-  :allow_push => true,
-  :allow_pull => true,
-  :git_adapter_factory => ->{ Grack::GitAdapter.new }
-}
-
-run Grack::App.new(config)
-```
-
-Then run:
-
-```sh
-$ bundle exec rackup --host localhost --port 8080 config.ru
-$ git clone http://localhost:8080/your-repository.git
-```
 
 ## Runtime Requirements
 
@@ -181,7 +188,7 @@ documentation.
 Thanks to all contributors.  Without your help this project would not exist.
 
 * Scott Chacon :: schacon@gmail.com
-* Dawa Ometto :: dawa.ometto@phil.uu.nl
+* Dawa Ometto :: d.ometto@gmail.com
 * Jeremy Bopp :: jeremy@bopp.net
 
 ## License
