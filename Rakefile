@@ -210,7 +210,7 @@ namespace :repo do
   desc 'Tag the current HEAD with the version string'
   task :tag => :check_workspace do
     version = get_version_argument
-    sh "git tag -s -m 'Release v#{version}' v#{version}"
+    sh "git tag -m 'Release v#{version}' v#{version}"
   end
 
   desc 'Ensure the workspace is fully committed and clean'
