@@ -23,12 +23,12 @@ Adapter.
 
   s.add_dependency('rack')
 
-  s.add_development_dependency('rake', '~> 10.1', '>= 10.1.1')
+  s.add_development_dependency('rake', '>= 12.3.3', '~> 12.3.3')
   s.add_development_dependency('rack-test', '~> 0.6', '>= 0.6.3')
   s.add_development_dependency('minitest', '~> 5.8', '>= 5.8.0')
   s.add_development_dependency('mocha', '~> 1.1', '>= 1.1.0')
   s.add_development_dependency('simplecov', '~> 0.10', '>= 0.10.0')
-  s.add_development_dependency('yard', '~> 0.8.7', '>= 0.8.7.3')
+  s.add_development_dependency('yard', '~> 0.9.24')
   s.add_development_dependency('redcarpet', '~> 3.1', '>= 3.1.0')
   s.add_development_dependency('github-markup', '~> 1.0', '>= 1.0.2')
   s.add_development_dependency('pry', '~> 0')
