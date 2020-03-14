@@ -5,6 +5,10 @@ detailed information is available in the rest of the documentation.
 
 **NOTE:** Date stamps in the following entries are in YYYY/MM/DD format.
 
+## v0.1.1 (2020/03/14)
+
+Minor update to dependencies and readme.
+
 ## v0.1.0 (2016/04/30)
 
 * Removed compatibility layer for version 0.0.x. Please use the configuration parameters specified in the README and update your adapters.

@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = 'grack'
-  s.version     = '0.1.0'
+  s.version     = '0.1.1'
   s.platform    = Gem::Platform::RUBY
   s.authors     = ['Scott Chacon', 'Dawa Ometto', 'Jeremy Bopp']
   s.email       =
