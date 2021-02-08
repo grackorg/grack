@@ -1,7 +1,7 @@
 [![Gem Version](https://badge.fury.io/rb/grack.svg)](http://badge.fury.io/rb/grack)
 [![Build Status](https://travis-ci.org/grackorg/grack.svg?branch=master)](https://travis-ci.org/grackorg/grack)
 [![Coverage Status](https://coveralls.io/repos/grackorg/grack/badge.svg?branch=master&service=github)](https://coveralls.io/github/grackorg/grack?branch=master)
-[![Dependency Status](https://gemnasium.com/grackorg/grack.svg)](https://gemnasium.com/grackorg/grack)
+[![Cutting Edge Dependency Status](https://dometto-cuttingedge.herokuapp.com/github/grackorg/grack/svg 'Cutting Edge Dependency Status')](https://dometto-cuttingedge.herokuapp.com/github/grackorg/grack/info)
 
 # Grack - Ruby/Rack Git Smart HTTP Server Handler
 
